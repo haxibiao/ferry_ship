@@ -58,7 +58,7 @@ func init() {
 	)
 
 	// 第二个参数为 true 则强制重新建表
-	orm.RunSyncdb("default", true, true)
+	orm.RunSyncdb("default", false, true)
 
 	// 添加默认用户 admin
 	d_user, d_u_err := GetUserById(1)
