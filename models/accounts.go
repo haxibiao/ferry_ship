@@ -18,6 +18,7 @@ type Accounts struct {
 	Password    string    `orm:"null; size(128);description(QQ 密码)"`
 	Md5Password string    `orm:"null; size(128); description(QQ 账号 md5 密码)"`
 	User        *Users    `orm:"rel(fk); description(添加 QQ 账号的用户)"`
+	AutoLogin   int       `orm:"default(1); description(自动登陆: 启用[1] 停用[0])"`
 	Status      int       `orm:"default(1); description(状态: 启用[1] 停用[0])"`
 	Created     time.Time `orm:"auto_now_add; type(datetime)"`
 	Updated     time.Time `orm:"auto_now; type(datetime)"`
