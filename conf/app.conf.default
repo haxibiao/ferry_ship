@@ -1,0 +1,10 @@
+appname = ferry_ship
+httpaddr = "0.0.0.0"
+httpport = 8082
+runmode = dev
+
+dbhost = 127.0.0.1:3306
+dbdriver = mysql
+dbusername = root
+dbpassword = mysqlpassword
+dbdatabase = test_ferry_ship
