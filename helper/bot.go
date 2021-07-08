@@ -169,6 +169,7 @@ func InitBot(account int64, password string) error {
 				// 其他登录错误
 				// logger.Fatalf("login failed: %v", resp.ErrorMessage)
 				return errors.New("bot login: " + resp.ErrorMessage)
+
 			}
 		}
 

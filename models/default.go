@@ -6,6 +6,7 @@
 package models
 
 import (
+	"ferry_ship/bot"
 	"ferry_ship/helper"
 	"fmt"
 	"sync"
@@ -66,5 +67,11 @@ func init() {
 		addUser("admin", "admin")
 		fmt.Println(tag + "注册默认用户 admin 成功！")
 	}
+
+	// 刷新全部机器人账号信息
+	RefreshAccountBotInfo()
+
+	// 机器人加载搜索电影组件
+	bot.RegisterModule(helper.MovieInstance)
 
 }
