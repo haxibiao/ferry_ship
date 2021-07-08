@@ -6,7 +6,7 @@
 	"scripts": {
 		"watch": "npx mix watch",
 		"debug": "npx mix",
-		"build": "npx mix --production"
+		"prod": "npx mix --production"
 	},
 	"repository": {
 		"type": "git",

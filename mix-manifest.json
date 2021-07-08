@@ -1,4 +1,8 @@
 {
     "/static/js/index.js": "/static/js/index.js",
+    "/static/js/login.js": "/static/js/login.js",
+    "/static/js/admin.js": "/static/js/admin.js",
+    "/static/css/admin.css": "/static/css/admin.css",
+    "/static/css/login.css": "/static/css/login.css",
     "/static/css/index.css": "/static/css/index.css"
 }
