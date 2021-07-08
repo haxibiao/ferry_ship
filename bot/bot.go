@@ -28,7 +28,7 @@ type Bot struct {
 
 // Instance Bot 实例
 var Instance *Bot
-var Instances map[int64]*Bot
+var Instances map[int64]*Bot = make(map[int64]*Bot)
 
 var logger = logrus.WithField("bot", "internal")
 

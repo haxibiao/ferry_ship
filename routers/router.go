@@ -33,6 +33,8 @@ func init() {
 			web.NSRouter("/add", &apis.AccountsController{}, "post:ApiAddBotAccount"),
 			web.NSRouter("/getinfo", &apis.AccountsController{}, "get:ApiGetBotInfo"),
 			web.NSRouter("/list", &apis.AccountsController{}, "get:ApiGetAllAccount"),
+			web.NSRouter("/bot/login", &apis.AccountsController{}, "post:ApiLoginBotAccount"),
+			web.NSRouter("/bot/ticket", &apis.AccountsController{}, "post:ApiBotVerifyTicket"),
 		),
 	)
 

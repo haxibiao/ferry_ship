@@ -2,9 +2,11 @@ package models
 
 import (
 	"errors"
+	"ferry_ship/bot"
 	"ferry_ship/helper"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -205,4 +207,38 @@ func AccountLoginQQ(m *Accounts) (account *Accounts) {
 
 	account, _ = GetAccountsById(m.Id)
 	return account
+}
+
+// 刷新全部机器人账号信息
+func RefreshAccountBotInfo() error {
+
+	// 重置全部机器人账号登陆状态
+	o := orm.NewOrm()
+	_, err := o.QueryTable(new(Accounts)).Update(orm.Params{
+		"status": 0,
+	})
+	if err != nil {
+		return err
+	}
+
+	for accountKey, botValue := range bot.Instances {
+
+		if botValue == nil {
+			continue
+		}
+
+		o := orm.NewOrm()
+		online := 0
+		if botValue.Online {
+			online = 1
+		}
+		o.QueryTable(new(Accounts)).Filter("account", accountKey).Update(orm.Params{
+			"name":   botValue.Nickname,
+			"avatar": "https://q2.qlogo.cn/headimg_dl?spec=100&dst_uin=" + strconv.FormatInt(botValue.Uin, 10),
+			"status": online,
+		})
+
+	}
+
+	return nil
 }

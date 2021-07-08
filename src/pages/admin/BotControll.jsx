@@ -17,7 +17,14 @@ import {
 	ControlLabel,
 	Checkbox,
 	Tag,
+	Message,
+	Grid,
+	Row,
+	Col,
+	Input,
+	InputGroup,
 } from 'rsuite';
+import BotLoginErrorView from './components/BotLoginErrorView';
 
 const { useState } = React;
 const { Column, HeaderCell, Cell, Pagination } = Table;
@@ -146,10 +153,89 @@ export default function BotControll() {
 			});
 	};
 
+	// 登陆账号
+	const [botLoginConfig, setbotLoginConfig] = useState({
+		id: 0, // id
+		account: 0, // 账号
+		showModal: false, // 显示弹窗
+		netLoding: false, // 标识请求中状态
+		callback: {}, // 登陆回调数据
+	});
+	const APIBotLogin = () => {
+		const { id } = botLoginConfig;
+
+		if (!id) {
+			Notification.error({
+				title: 'id 异常',
+			});
+			return;
+		}
+
+		// 请求中，不能重复发起请求
+		if (botLoginConfig.netLoding) {
+			return;
+		}
+
+		setbotLoginConfig({
+			...botLoginConfig,
+			netLoding: true,
+		});
+
+		const params = new URLSearchParams();
+		params.append('id', id);
+
+		axios
+			.post('/api/account/bot/login', params, {})
+			.then((res) => {
+				setbotLoginConfig({
+					...botLoginConfig,
+					netLoding: false,
+				});
+
+				const { data } = res;
+				const { code } = data;
+
+				if (code < 1) {
+					Notification.error({
+						title: data?.msg || '失败，请稍后重试！',
+					});
+				} else {
+					const callback = data?.data;
+
+					console.log('回调', callback);
+
+					if (callback?.error) {
+						// 需要二次认证
+						setbotLoginConfig({
+							...botLoginConfig,
+							callback: callback,
+						});
+					} else {
+						setbotLoginConfig({
+							...botLoginConfig,
+							id: 0,
+							account: 0,
+							showModal: false,
+						});
+						refetch();
+					}
+				}
+			})
+			.catch((error) => {
+				Notification.error({
+					title: '失败，' + error || '失败，请稍后重试！',
+				});
+				setbotLoginConfig({
+					...botLoginConfig,
+					netLoding: false,
+				});
+			});
+	};
+
 	if (loading) return <Loader backdrop content="loading..." vertical />;
 
 	return (
-		<div style={{ paddingTop: 25, paddingBottom: 25 }}>
+		<div className="page_botControll" style={{ paddingTop: 25, paddingBottom: 25 }}>
 			<p>机器人账号管理页面</p>
 			<br />
 
@@ -209,7 +295,7 @@ export default function BotControll() {
 
 					<Column width={260}>
 						<HeaderCell>登陆时间</HeaderCell>
-						<Cell dataKey="time" />
+						<Cell dataKey="updated" />
 					</Column>
 
 					<Column width={360} fixed="right">
@@ -217,13 +303,13 @@ export default function BotControll() {
 
 						<Cell>
 							{(rowData) => {
-								function editAction(e) {
-									setupdateUser({
-										id: rowData.id,
-										name: rowData.name,
-										passwd: '',
+								function onBotLogin(e) {
+									setbotLoginConfig({
+										...botLoginConfig,
+										id: rowData?.id,
+										account: rowData?.account,
+										showModal: true,
 									});
-									setshowUpdateUser(true);
 
 									// 结束事件分发
 									e.stopPropagation();
@@ -232,21 +318,25 @@ export default function BotControll() {
 								function disableAction(e) {
 									// 结束事件分发
 									e.stopPropagation();
-									APIDisableUser(rowData.id, rowData.status === '启用');
+								}
+
+								function onClick(e) {
+									// 结束事件分发
+									e.stopPropagation();
 								}
 
 								return (
 									<span>
 										{rowData.status == 1 ? (
 											<>
-												<a onClick={editAction}> 重新登陆 </a> |
+												<a onClick={onClick}> 重新登陆 </a> |
 											</>
 										) : (
 											<>
-												<a onClick={editAction}> 立即登陆 </a> |
+												<a onClick={onBotLogin}> 立即登陆 </a> |
 											</>
 										)}
-										<a onClick={editAction}> 重设密码 </a> |<a onClick={editAction}> 删除账号 </a> |
+										<a onClick={onClick}> 重设密码 </a> |<a onClick={onClick}> 删除账号 </a> |
 										<a onClick={disableAction}>
 											{rowData.auto_login == 1 ? ' 禁用自动登陆 ' : ' 启用自动登陆 '}
 										</a>{' '}
@@ -302,6 +392,41 @@ export default function BotControll() {
 						loading={addAccountLoading}
 					>
 						添加账号
+					</Button>
+				</Modal.Footer>
+			</Modal>
+
+			<Modal
+				show={botLoginConfig.showModal}
+				onHide={() => {
+					setbotLoginConfig({
+						showModal: false,
+					});
+				}}
+				backdrop="static"
+			>
+				<Modal.Header>
+					<Modal.Title>是否要登陆账号？</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<p>是否需要登陆机器人账号：{botLoginConfig.account}</p>
+					<p>
+						登陆成功之后会监听全部群消息，发现有人 @ 并包含 <code>搜索</code>{' '}
+						关键词将会调用接口搜索电影并回复结果消息。
+					</p>
+					{botLoginConfig?.callback?.error ? (
+						<BotLoginErrorView callbackData={botLoginConfig?.callback} />
+					) : null}
+				</Modal.Body>
+				<Modal.Footer>
+					<Button
+						onClick={APIBotLogin}
+						style={{ color: '#FFF' }}
+						appearance="primary"
+						disabled={botLoginConfig?.callback?.error ? true : false}
+						loading={botLoginConfig.netLoding}
+					>
+						立即登陆
 					</Button>
 				</Modal.Footer>
 			</Modal>
