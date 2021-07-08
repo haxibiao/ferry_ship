@@ -26,6 +26,13 @@ func init() {
 			web.NSRouter("/update", &apis.UsersController{}, "post:ApiUpdateUser"),
 			web.NSRouter("/list", &apis.UsersController{}, "get:ApiUserList"),
 		),
+
+		// QQ账号相关 API
+		web.NSNamespace("/account",
+			// 获取用户信息
+			web.NSRouter("/add", &apis.AccountsController{}, "post:ApiAddBotAccount"),
+			web.NSRouter("/getinfo", &apis.AccountsController{}, "get:ApiGetBotInfo"),
+		),
 	)
 
 	web.AddNamespace(api)

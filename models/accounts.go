@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"ferry_ship/helper"
 	"fmt"
 	"reflect"
 	"strings"
@@ -12,14 +13,14 @@ import (
 
 type Accounts struct {
 	Id          int
-	Account     string    `orm:"size(128); description(QQ 账号)"`
+	Account     int64     `orm:"unique; index; description(QQ 账号)"`
 	Name        string    `orm:"null; size(128); description(QQ 昵称)"`
 	Avatar      string    `orm:"null; size(128); description(QQ 账号头像)"`
 	Password    string    `orm:"null; size(128);description(QQ 密码)"`
 	Md5Password string    `orm:"null; size(128); description(QQ 账号 md5 密码)"`
 	User        *Users    `orm:"rel(fk); description(添加 QQ 账号的用户)"`
 	AutoLogin   int       `orm:"default(1); description(自动登陆: 启用[1] 停用[0])"`
-	Status      int       `orm:"default(1); description(状态: 启用[1] 停用[0])"`
+	Status      int       `orm:"default(0); description(状态: 在线[1] 离线[0])"`
 	Created     time.Time `orm:"auto_now_add; type(datetime)"`
 	Updated     time.Time `orm:"auto_now; type(datetime)"`
 }
@@ -33,6 +34,13 @@ func init() {
 func AddAccounts(m *Accounts) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
+	if err != nil {
+		account, _ := GetAccountsById(int(id))
+		if account != nil {
+			// 触发登陆 QQ 账号
+			AccountLoginQQ(account)
+		}
+	}
 	return
 }
 
@@ -42,6 +50,16 @@ func GetAccountsById(id int) (v *Accounts, err error) {
 	o := orm.NewOrm()
 	v = &Accounts{Id: id}
 	if err = o.QueryTable(new(Accounts)).Filter("Id", id).RelatedSel().One(v); err == nil {
+		return v, nil
+	}
+	return nil, err
+}
+
+// 通过 account QQ 账号获取
+func GetAccountsByAccount(account int64) (v *Accounts, err error) {
+	o := orm.NewOrm()
+	v = &Accounts{Account: account}
+	if err = o.QueryTable(new(Accounts)).Filter("Account", account).RelatedSel().One(v); err == nil {
 		return v, nil
 	}
 	return nil, err
@@ -149,4 +167,30 @@ func DeleteAccounts(id int) (err error) {
 		}
 	}
 	return
+}
+
+// Accounts 转 map 数据
+func TurnAccountsToMap(account *Accounts) map[string]interface{} {
+	return map[string]interface{}{
+		"id":     account.Id,
+		"name":   account.Name,
+		"acc":    account.Account,
+		"avatar": account.Avatar,
+	}
+}
+
+// 登陆 QQ 账号
+func AccountLoginQQ(m *Accounts) (account *Accounts) {
+
+	if m.Password != "" {
+		// 密码存在，使用密码登陆
+		err := helper.InitBot(m.Account, m.Password)
+		fmt.Printf("device lock -> %v\n", err)
+	} else if m.Md5Password != "" {
+		// 密码 md5 存在，使用 md5 登陆
+
+	}
+
+	account, _ = GetAccountsById(m.Id)
+	return account
 }

@@ -3,3 +3,4 @@ app.conf
 application.yaml
 logs/
 lastupdate.tmp
+device.json

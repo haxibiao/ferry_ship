@@ -3,6 +3,7 @@ package helper
 import (
 	"bufio"
 	"bytes"
+
 	"errors"
 	"fmt"
 	"image"
@@ -11,7 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Logiase/MiraiGo-Template/bot"
+	"ferry_ship/bot"
+
 	"github.com/Logiase/MiraiGo-Template/utils"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
@@ -19,6 +21,9 @@ import (
 	_ "github.com/Logiase/MiraiGo-Template/modules/logging"
 	asc2art "github.com/yinghau76/go-ascii-art"
 )
+
+var Instances map[int64]*bot.Bot
+var VerifyTicket string
 
 func init() {
 	utils.WriteLogToFS()
@@ -145,16 +150,18 @@ func InitBot(account int64, password string) error {
 
 			case client.SliderNeededError:
 
-				// 需要滑块错误
-				if client.SystemDeviceInfo.Protocol == client.AndroidPhone {
-					return errors.New("bot login: Android Phone Protocol DO NOT SUPPORT Slide verify")
-					// fmt.Println("Android Phone Protocol DO NOT SUPPORT Slide verify")
-					// fmt.Println("please use other protocol")
-					// os.Exit(2)
+				fmt.Println("please look at the doc https://github.com/Mrs4s/go-cqhttp/blob/master/docs/slider.md to get ticket")
+				fmt.Printf("open %s to get ticket\n", resp.VerifyUrl)
+
+				fmt.Printf("等待滑动认证…")
+				i := 0
+				for true {
+					if VerifyTicket != "" || i > 100000000000000 {
+						resp, err = bot.Instance.SubmitTicket(VerifyTicket)
+						break
+					}
+					// i++
 				}
-				bot.Instance.AllowSlider = false
-				bot.Instance.Disconnect()
-				resp, err = bot.Instance.Login()
 
 				continue
 
@@ -170,6 +177,11 @@ func InitBot(account int64, password string) error {
 
 	// 刷新好友列表，群列表
 	bot.RefreshList()
+
+	if Instances == nil {
+		Instances = make(map[int64]*bot.Bot)
+	}
+	Instances[account] = bot.Instance
 
 	return nil
 	// ch := make(chan os.Signal, 1)
@@ -207,4 +219,18 @@ func convert(b []byte) string {
 		s[i] = strconv.Itoa(int(b[i]))
 	}
 	return strings.Join(s, ",")
+}
+
+func GetBotInfo(account int64) *bot.Bot {
+
+	bot := Instances[account]
+	c := len(Instances)
+	log.Println("账号: " + strconv.Itoa(c))
+
+	if bot != nil {
+		log.Println("账号: " + bot.Nickname)
+		return bot
+	}
+
+	return nil
 }

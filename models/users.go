@@ -10,7 +10,7 @@ import (
 
 type Users struct {
 	Id       int
-	Name     string    `orm:"size(128); description(用户名)"`
+	Name     string    `orm:"unique; index; size(128); description(用户名)"`
 	Password string    `orm:"size(128); description(密码)"`
 	Token    string    `orm:"size(128); description(api token)"`
 	Status   int       `orm:"default(1); description(状态: 启用[1] 停用[0])"`

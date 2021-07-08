@@ -42,6 +42,15 @@ func callBackResult(c *beego.Controller, code int, msg string, data interface{})
 // 判断是否登陆函数，该函数还可以获取登陆用户
 func isLogin(c *beego.Controller) (token string, user models.Users, isLogin bool) {
 	token, tokenErr := c.GetSecureCookie("bin", "u_token")
+
+	if token == "" || !tokenErr {
+		// 加上 API Token 认证功能
+		token = c.Ctx.Input.Query("api_token")
+		if token != "" {
+			tokenErr = true
+		}
+	}
+
 	user, userErr := models.TokenGetUser(token)
 	// token 获取失败或失效，或用户被禁用将视为未登陆
 	if !tokenErr || userErr != nil || user.Status != 1 {

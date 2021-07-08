@@ -18,7 +18,7 @@ func isLogin(c *AdminController) (token string, user models.Users, isLogin bool)
 	token, tokenErr := c.GetSecureCookie("bin", "u_token")
 	user, userErr := models.TokenGetUser(token)
 	// token 获取失败或失效，或用户被禁用将视为未登陆
-	if !tokenErr || userErr != nil || user.Status != 1 {
+	if !tokenErr || token == "" || userErr != nil || user.Status != 1 {
 		return token, user, false
 	} else {
 		return token, user, true
