@@ -169,13 +169,25 @@ func DeleteAccounts(id int) (err error) {
 	return
 }
 
+// 获取全部 bot 账号
+func AllAccounts(limit int, page int) (accounts []Accounts, err error) {
+	o := orm.NewOrm()
+	qs := o.QueryTable(new(Accounts))
+	_, err = qs.Filter("id__isnull", false).Limit(limit, page).All(&accounts)
+	return
+}
+
 // Accounts 转 map 数据
 func TurnAccountsToMap(account *Accounts) map[string]interface{} {
 	return map[string]interface{}{
-		"id":     account.Id,
-		"name":   account.Name,
-		"acc":    account.Account,
-		"avatar": account.Avatar,
+		"id":         account.Id,
+		"name":       account.Name,
+		"account":    account.Account,
+		"avatar":     account.Avatar,
+		"status":     account.Status,
+		"auto_login": account.AutoLogin,
+		"updated":    account.Updated,
+		"created":    account.Created,
 	}
 }
 

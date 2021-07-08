@@ -6,6 +6,7 @@ import { AppHeader, AppFooter } from '../../components';
 import AppMenu from './components/AppMenu';
 import Home from './Home';
 import UserControll from './UserControll';
+import BotControll from './BotControll';
 import SystemSetup from './SystemSetup';
 
 const { useState, useEffect } = React;
@@ -59,7 +60,7 @@ export default function App() {
 
 	const AppContents = {
 		1: <Home />,
-		2: <UserControll />,
+		2: <BotControll />,
 		3: <SystemSetup />,
 	};
 
@@ -91,10 +92,9 @@ export default function App() {
 					>
 						{AppContents[activeKey]}
 					</Content>
+					<AppFooter />
 				</FlexboxGrid.Item>
 			</FlexboxGrid>
-
-			<AppFooter />
 		</Container>
 	);
 }

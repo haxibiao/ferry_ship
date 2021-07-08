@@ -70,11 +70,37 @@ func (c *AccountsController) ApiAddBotAccount() {
 
 	callBackResult(&c.Controller, 200, "", c.Data["json"])
 	c.Finish()
+}
 
+// 响应获取全部机器人账号列表
+func (c *AccountsController) ApiGetAllAccount() {
+	userAssistant(&c.Controller) // 登陆认证
+
+	u_count, _ := c.GetInt("count", 10)
+	u_page, _ := c.GetInt("page", 0)
+
+	accounts, err := models.AllAccounts(u_count, u_page)
+
+	if err != nil {
+		callBackResult(&c.Controller, 403, "服务器错误", nil)
+		c.Finish()
+		return
+	}
+
+	var new_accouts []interface{}
+
+	for item := range accounts {
+		i_bot := accounts[item]
+		new_bot := models.TurnAccountsToMap(&i_bot)
+		new_accouts = append(new_accouts, new_bot)
+	}
+
+	callBackResult(&c.Controller, 200, "", new_accouts)
 }
 
 // 认证机器人账号登陆滑块
 func (c *AccountsController) ApiBotVerifyTicket() {
+	userAssistant(&c.Controller) // 认证
 
 	u_ticket := c.GetString("ticket")
 
@@ -85,8 +111,10 @@ func (c *AccountsController) ApiBotVerifyTicket() {
 }
 
 func (c *AccountsController) ApiGetBotInfo() {
-	flash := beego.ReadFromRequest(&c.Controller)
+	userAssistant(&c.Controller) // 认证
 
+	// 调试 flash
+	flash := beego.ReadFromRequest(&c.Controller)
 	if n, ok := flash.Data["notice"]; ok {
 		fmt.Println("输出: " + n)
 	}

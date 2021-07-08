@@ -32,6 +32,7 @@ func init() {
 			// 获取用户信息
 			web.NSRouter("/add", &apis.AccountsController{}, "post:ApiAddBotAccount"),
 			web.NSRouter("/getinfo", &apis.AccountsController{}, "get:ApiGetBotInfo"),
+			web.NSRouter("/list", &apis.AccountsController{}, "get:ApiGetAllAccount"),
 		),
 	)
 
