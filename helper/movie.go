@@ -7,7 +7,6 @@ package helper
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -92,7 +91,7 @@ func (mov *movie) Serve(b *bot.Bot) {
 			}
 		}
 
-		fmt.Println("【收到消息】" + msg.ToString())
+		// fmt.Println("【收到消息】" + msg.ToString())
 
 	})
 

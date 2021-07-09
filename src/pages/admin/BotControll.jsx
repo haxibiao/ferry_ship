@@ -232,6 +232,88 @@ export default function BotControll() {
 			});
 	};
 
+	// 重设机器人账号密码
+	const [repasswoedConfig, setrepasswoedConfig] = useState({
+		id: 0, // id
+		account: 0, // 账号
+		password: '', // 密码
+		showModal: false, // 显示弹窗
+		netLoding: false, // 标识请求中状态
+	});
+	const onRepasswoedConfig = (value) => {
+		setrepasswoedConfig({
+			...repasswoedConfig,
+			...value,
+		});
+	};
+	const APIBotRepassword = () => {
+		const { id, password } = repasswoedConfig;
+
+		if (!id || !password) {
+			Notification.error({
+				title: '新密码不得为空！',
+			});
+			return;
+		}
+
+		// 请求中，不能重复发起请求
+		if (repasswoedConfig.netLoding) {
+			return;
+		}
+
+		setrepasswoedConfig({
+			...repasswoedConfig,
+			netLoding: true,
+		});
+
+		const params = new URLSearchParams();
+		params.append('id', id);
+		params.append('password', password);
+
+		axios
+			.post('/api/account/bot/repassword', params, {})
+			.then((res) => {
+				setrepasswoedConfig({
+					...repasswoedConfig,
+					netLoding: false,
+				});
+
+				const { data } = res;
+				const { code } = data;
+
+				if (code < 1) {
+					Notification.error({
+						title: '错误，请稍后重试！',
+						description: data?.msg,
+					});
+				} else {
+					const callback = data?.data;
+					// console.log('回调', callback);
+
+					Notification.success({
+						title: '机器人密码重新设定成功！',
+					});
+
+					setrepasswoedConfig({
+						id: 0,
+						password: '',
+						showModal: false,
+					});
+					refetch(); // 刷新列表数据
+				}
+			})
+			.catch((error) => {
+				Notification.error({
+					title: '失败，请稍后重试！',
+					description: error,
+				});
+				setrepasswoedConfig({
+					...repasswoedConfig,
+					netLoding: false,
+				});
+			});
+	};
+
 	if (loading) return <Loader backdrop content="loading..." vertical />;
 
 	return (
@@ -303,6 +385,7 @@ export default function BotControll() {
 
 						<Cell>
 							{(rowData) => {
+								// 登陆机器人账号
 								function onBotLogin(e) {
 									setbotLoginConfig({
 										...botLoginConfig,
@@ -311,6 +394,18 @@ export default function BotControll() {
 										showModal: true,
 									});
 
+									// 结束事件分发
+									e.stopPropagation();
+								}
+
+								// 重新设定机器人密码
+								function onBotRepassword(e) {
+									setrepasswoedConfig({
+										...botLoginConfig,
+										id: rowData?.id,
+										account: rowData?.account,
+										showModal: true,
+									});
 									// 结束事件分发
 									e.stopPropagation();
 								}
@@ -336,7 +431,8 @@ export default function BotControll() {
 												<a onClick={onBotLogin}> 立即登陆 </a> |
 											</>
 										)}
-										<a onClick={onClick}> 重设密码 </a> |<a onClick={onClick}> 删除账号 </a> |
+										<a onClick={onBotRepassword}> 重设密码 </a> |<a onClick={onClick}> 删除账号 </a>{' '}
+										|
 										<a onClick={disableAction}>
 											{rowData.auto_login == 1 ? ' 禁用自动登陆 ' : ' 启用自动登陆 '}
 										</a>{' '}
@@ -348,6 +444,7 @@ export default function BotControll() {
 				</Table>
 			</Panel>
 
+			{/* 添加机器人账号弹窗 */}
 			<Modal
 				show={showAddAccount}
 				onHide={() => {
@@ -396,6 +493,41 @@ export default function BotControll() {
 				</Modal.Footer>
 			</Modal>
 
+			{/* 重设机器人账号弹窗 */}
+			<Modal
+				show={repasswoedConfig.showModal}
+				onHide={() => {
+					setrepasswoedConfig({
+						showModal: false,
+					});
+				}}
+				backdrop="static"
+			>
+				<Modal.Header>
+					<Modal.Title>重设机器人账号密码</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<p style={{ marginBottom: 20 }}>重新设定密码的机器人账号：{repasswoedConfig.account}</p>
+					<Form fluid onChange={onRepasswoedConfig} formValue={repasswoedConfig}>
+						<FormGroup>
+							<ControlLabel>请输入新的密码：</ControlLabel>
+							<FormControl name="password" />
+						</FormGroup>
+					</Form>
+				</Modal.Body>
+				<Modal.Footer>
+					<Button
+						onClick={APIBotRepassword}
+						style={{ color: '#FFF' }}
+						appearance="primary"
+						loading={repasswoedConfig.netLoding}
+					>
+						重设密码
+					</Button>
+				</Modal.Footer>
+			</Modal>
+
+			{/* 立即登陆机器人账号弹窗 */}
 			<Modal
 				show={botLoginConfig.showModal}
 				onHide={() => {

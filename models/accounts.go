@@ -242,3 +242,23 @@ func RefreshAccountBotInfo() error {
 
 	return nil
 }
+
+// 重设机器人账号密码
+func AccountReupdatePassword(m *Accounts, password string) (account *Accounts, ok bool) {
+
+	o := orm.NewOrm()
+	o.QueryTable(new(Accounts)).Filter("id", m.Id).Update(orm.Params{
+		"password": password,
+	})
+	account, err := GetAccountsById(m.Id)
+
+	if account != nil && err == nil {
+
+		// 判断密码是否修改成功
+		if account.Password == password {
+			return account, true
+		}
+	}
+
+	return account, false
+}

@@ -4,6 +4,7 @@
 	"description": "渡船 QQ 群电影搜索机器人基于 Mirai",
 	"main": "index.js",
 	"scripts": {
+		"build-linux": "npm run prod && bee pack -be GOOS=linux -exs=.:node_modules:src:logs:conf/app.conf",
 		"watch": "npx mix watch",
 		"debug": "npx mix",
 		"prod": "npx mix --production"

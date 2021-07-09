@@ -360,6 +360,7 @@ func (c *AccountsController) ApiLoginBotAccount() {
 	}
 }
 
+// 获取机器人账号信息
 func (c *AccountsController) ApiGetBotInfo() {
 	userAssistant(&c.Controller) // 认证
 
@@ -403,4 +404,37 @@ func (c *AccountsController) ApiGetBotInfo() {
 
 	callBackResult(&c.Controller, 200, "", c.Data["json"])
 	c.Finish()
+}
+
+// 重设机器人账号密码
+func (c *AccountsController) ApiUpdateBotPassword() {
+	userAssistant(&c.Controller) // 认证
+
+	a_id, err := c.GetInt("id")
+	a_password := c.GetString("password")
+
+	if a_id == 0 || a_password == "" {
+		callBackResult(&c.Controller, 200, "缺失参数", nil)
+		c.Finish()
+		return
+	}
+
+	account, err := models.GetAccountsById(a_id)
+	if err != nil || account == nil {
+		// 账号不存在
+		callBackResult(&c.Controller, 200, "该账号不存在", nil)
+		c.Finish()
+		return
+	}
+
+	if account, ok := models.AccountReupdatePassword(account, a_password); ok && account != nil {
+		c.Data["json"] = models.TurnAccountsToMap(account)
+		callBackResult(&c.Controller, 200, "", c.Data["json"])
+		c.Finish()
+		return
+	}
+
+	callBackResult(&c.Controller, 200, "账号密码修改失败，请稍后重试", nil)
+	c.Finish()
+	return
 }
