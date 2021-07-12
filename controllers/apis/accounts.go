@@ -121,7 +121,8 @@ func (c *AccountsController) ApiBotVerifyTicket() {
 		if err != nil {
 			callBackResult(&c.Controller, 200, "登陆出错，"+err.Error(), nil)
 		} else {
-			callBackResult(&c.Controller, 200, "登陆出错，"+resp.ErrorMessage, nil)
+			c.Data["json"] = botCallBackToMap(resp)
+			callBackResult(&c.Controller, 200, "登陆出错，"+resp.ErrorMessage, c.Data["json"])
 		}
 
 		c.Finish()
@@ -437,4 +438,79 @@ func (c *AccountsController) ApiUpdateBotPassword() {
 	callBackResult(&c.Controller, 200, "账号密码修改失败，请稍后重试", nil)
 	c.Finish()
 	return
+}
+
+// 转换登陆结果为 map 数据
+func botCallBackToMap(resp *client.LoginResponse) map[string]interface{} {
+	switch resp.Error {
+
+	case client.NeedCaptcha:
+
+		err := ioutil.WriteFile("static/img/acptcha/log.jpg", resp.CaptchaImage, os.FileMode(0755))
+		if err != nil {
+			return map[string]interface{}{
+				"error": 10010,
+				"text":  "(验证码获取失败) login failed",
+			}
+		}
+
+		return map[string]interface{}{
+			"error": 10011,
+			"text":  "(登陆需要验证码) login failed",
+			"url":   "/static/img/acptcha/log.jpg",
+			"sign":  resp.CaptchaSign,
+		}
+
+	case client.UnsafeDeviceError:
+		// 不安全设备错误
+		return map[string]interface{}{
+			"error": 10020,
+			"text":  "(不安全设备错误) login failed",
+			"url":   resp.VerifyUrl,
+		}
+	case client.SMSNeededError:
+
+		// 需要SMS错误
+		return map[string]interface{}{
+			"error": 10030,
+			"text":  "(需要短信验证码) login failed",
+		}
+
+	case client.TooManySMSRequestError:
+		// 短信请求错误太多
+
+		return map[string]interface{}{
+			"error": 10040,
+			"text":  "(短信请求错误太多) login failed",
+		}
+
+	case client.SMSOrVerifyNeededError:
+		// SMS或验证所需的错误
+
+		return map[string]interface{}{
+			"error": 10050,
+			"text":  "(需要短信验证码或扫描二维码) login failed",
+			"url":   resp.VerifyUrl,
+		}
+
+	case client.SliderNeededError:
+		// 需要滑动认证
+
+		return map[string]interface{}{
+			"error": 10060,
+			"text":  "(需要滑动认证) please look at the doc https://github.com/Mrs4s/go-cqhttp/blob/master/docs/slider.md to get ticket",
+			"url":   resp.VerifyUrl,
+		}
+
+	case client.OtherLoginError, client.UnknownLoginError:
+		// 其他登录错误
+
+		return map[string]interface{}{
+			"error": 10070,
+			"text":  "(其他登陆错误) login failed: " + resp.ErrorMessage,
+		}
+
+	}
+
+	return nil
 }

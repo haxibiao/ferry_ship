@@ -4,12 +4,14 @@ import useAxios from 'axios-hooks';
 import axios from 'axios';
 
 import { Notification, Message, Input, InputGroup } from 'rsuite';
+import QRCode from 'qrcode';
 
 const { useState } = React;
 
 const BotLoginErrorView = (props) => {
-	const { callbackData } = props;
+	const { callbackData, onCallBack } = props;
 	const { error, text, url } = callbackData;
+	const [qrCodeUrl, setqrCodeUrl] = useState('');
 
 	// 提交滑动认证 ticket
 	const [ticketConfig, setticketConfig] = useState({
@@ -53,6 +55,9 @@ const BotLoginErrorView = (props) => {
 					});
 				} else {
 					const callback = data?.data;
+
+					// 返回回调
+					onCallBack && onCallBack(callback);
 
 					console.log('请求回调', callback);
 				}
@@ -135,6 +140,11 @@ const BotLoginErrorView = (props) => {
 			break;
 		case 10050:
 			// 需要扫描二维码登陆或获取短信验证码登陆
+			QRCode.toDataURL(url)
+				.then((qrurl) => {
+					setqrCodeUrl(qrurl);
+				})
+				.catch((err) => {});
 			return (
 				<>
 					{text && (
@@ -142,7 +152,7 @@ const BotLoginErrorView = (props) => {
 							<Message type="warning" description={text} />
 						</div>
 					)}
-					<img style={{ width: 75, height: 75 }} src={url} alt="qr" />
+					<img style={{ width: 135, height: 135 }} src={qrCodeUrl} alt="qr" />
 				</>
 			);
 			break;

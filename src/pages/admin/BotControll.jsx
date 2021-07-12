@@ -547,7 +547,16 @@ export default function BotControll() {
 						关键词将会调用接口搜索电影并回复结果消息。
 					</p>
 					{botLoginConfig?.callback?.error ? (
-						<BotLoginErrorView callbackData={botLoginConfig?.callback} />
+						<BotLoginErrorView
+							callbackData={botLoginConfig?.callback}
+							onCallBack={(data) => {
+								// 需要二次认证
+								setbotLoginConfig({
+									...botLoginConfig,
+									callback: data,
+								});
+							}}
+						/>
 					) : null}
 				</Modal.Body>
 				<Modal.Footer>
