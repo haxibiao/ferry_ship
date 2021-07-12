@@ -232,6 +232,84 @@ export default function BotControll() {
 			});
 	};
 
+	// 退出登陆机器人账号
+	const [botLogoutConfig, setbotLogoutConfig] = useState({
+		id: 0, // id
+		account: 0, // 账号
+		showModal: false, // 显示弹窗
+		netLoding: false, // 标识请求中状态
+	});
+	const APIBotLogout = () => {
+		const { id } = botLogoutConfig;
+
+		if (!id) {
+			Notification.error({
+				title: 'id 异常',
+			});
+			return;
+		}
+
+		// 请求中，不能重复发起请求
+		if (botLogoutConfig.netLoding) {
+			return;
+		}
+
+		setbotLogoutConfig({
+			...botLogoutConfig,
+			netLoding: true,
+		});
+
+		const params = new URLSearchParams();
+		params.append('id', id);
+
+		axios
+			.post('/api/account/bot/logout', params, {})
+			.then((res) => {
+				setbotLogoutConfig({
+					...botLogoutConfig,
+					netLoding: false,
+				});
+
+				const { data } = res;
+				const { code } = data;
+
+				if (code < 1) {
+					Notification.error({
+						title: data?.msg || '失败，请稍后重试！',
+					});
+				} else {
+					const callback = data?.data;
+
+					console.log('回调', callback);
+
+					if (callback?.error) {
+						// 需要二次认证
+						setbotLogoutConfig({
+							...botLogoutConfig,
+							callback: callback,
+						});
+					} else {
+						setbotLogoutConfig({
+							...botLogoutConfig,
+							id: 0,
+							account: 0,
+							showModal: false,
+						});
+						refetch();
+					}
+				}
+			})
+			.catch((error) => {
+				Notification.error({
+					title: '失败，' + error || '失败，请稍后重试！',
+				});
+				setbotLogoutConfig({
+					...botLogoutConfig,
+					netLoding: false,
+				});
+			});
+	};
+
 	// 重设机器人账号密码
 	const [repasswoedConfig, setrepasswoedConfig] = useState({
 		id: 0, // id
@@ -398,6 +476,19 @@ export default function BotControll() {
 									e.stopPropagation();
 								}
 
+								// 退出登陆机器人账号
+								function onBotLogout(e) {
+									setbotLogoutConfig({
+										...botLogoutConfig,
+										id: rowData?.id,
+										account: rowData?.account,
+										showModal: true,
+									});
+
+									// 结束事件分发
+									e.stopPropagation();
+								}
+
 								// 重新设定机器人密码
 								function onBotRepassword(e) {
 									setrepasswoedConfig({
@@ -424,7 +515,7 @@ export default function BotControll() {
 									<span>
 										{rowData.status == 1 ? (
 											<>
-												<a onClick={onClick}> 重新登陆 </a> |
+												<a onClick={onBotLogout}> 退出登陆 </a> |
 											</>
 										) : (
 											<>
@@ -566,6 +657,36 @@ export default function BotControll() {
 						appearance="primary"
 						disabled={botLoginConfig?.callback?.error ? true : false}
 						loading={botLoginConfig.netLoding}
+					>
+						立即登陆
+					</Button>
+				</Modal.Footer>
+			</Modal>
+
+			{/* 退出登陆机器人账号弹窗 */}
+			<Modal
+				show={botLogoutConfig.showModal}
+				onHide={() => {
+					setbotLogoutConfig({
+						showModal: false,
+					});
+				}}
+				backdrop="static"
+			>
+				<Modal.Header>
+					<Modal.Title>是否要登陆账号？</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<p>是否需要退出登陆机器人账号：{botLogoutConfig.account}</p>
+					<p>退出登陆之后需要重新登陆才能继续使用机器人搜索电影功能。</p>
+				</Modal.Body>
+				<Modal.Footer>
+					<Button
+						onClick={APIBotLogout}
+						style={{ color: '#FFF' }}
+						appearance="primary"
+						disabled={botLogoutConfig?.callback?.error ? true : false}
+						loading={botLogoutConfig.netLoding}
 					>
 						立即登陆
 					</Button>

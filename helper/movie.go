@@ -61,6 +61,12 @@ func (mov *movie) Serve(b *bot.Bot) {
 
 		// fmt.Printf("message=%+v\n", msg.Elements)
 
+		if botObj := bot.Instances[c.Uin]; botObj == nil {
+			// 机器人已下线，直接结束回复流程
+			// fmt.Println("【收到消息】机器人已下线，直接结束回复流程")
+			return
+		}
+
 		for _, elem := range msg.Elements {
 
 			// 判断是 @ 用户消息类型
@@ -83,10 +89,14 @@ func (mov *movie) Serve(b *bot.Bot) {
 						c.SendGroupMessage(msg.GroupCode, m)
 
 						// 匹配成功一次之后就跳出匹配
-						break
-
+						return
 					}
 				}
+
+				// 未触发关键词，生成默认回复消息并发送
+				out := autoreply("")
+				m := message.NewSendingMessage().Append(message.NewText(out))
+				c.SendGroupMessage(msg.GroupCode, m)
 
 			}
 		}

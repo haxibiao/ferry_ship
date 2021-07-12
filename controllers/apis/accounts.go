@@ -440,6 +440,43 @@ func (c *AccountsController) ApiUpdateBotPassword() {
 	return
 }
 
+// 下线机器人账号
+func (c *AccountsController) ApiLogoutBotAccount() {
+	userAssistant(&c.Controller) // 认证
+
+	a_id, err := c.GetInt("id")
+
+	account, err := models.GetAccountsById(a_id)
+	if err != nil || account == nil {
+		// 账号不存在
+		callBackResult(&c.Controller, 200, "该账号不存在", nil)
+		c.Finish()
+		return
+	}
+
+	botObj := bot.Instances[account.Account]
+
+	if botObj == nil || !botObj.Online {
+		// 账号未登陆
+		callBackResult(&c.Controller, 200, "该账号未登陆", nil)
+		c.Finish()
+		return
+	}
+
+	// 从在线列表删除
+	delete(bot.Instances, account.Account)
+	// 设置状态为离线
+	botObj.QQClient.SetOnlineStatus(client.StatusOffline)
+	// 刷新机器人在线状态列表数据
+	models.RefreshAccountBotInfo()
+
+	// 返回退出登陆成功结果
+	c.Data["json"] = account
+	callBackResult(&c.Controller, 200, "", c.Data["json"])
+	c.Finish()
+	return
+}
+
 // 转换登陆结果为 map 数据
 func botCallBackToMap(resp *client.LoginResponse) map[string]interface{} {
 	switch resp.Error {
