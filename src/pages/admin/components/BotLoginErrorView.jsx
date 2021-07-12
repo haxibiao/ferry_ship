@@ -152,7 +152,14 @@ const BotLoginErrorView = (props) => {
 							<Message type="warning" description={text} />
 						</div>
 					)}
-					<img style={{ width: 135, height: 135 }} src={qrCodeUrl} alt="qr" />
+					<p>
+						推荐使用 QQ
+						扫描上面二维码认证或者直接打开二次认证页面，二次认证成功后关闭该页面重新点击登陆即可:{' '}
+						<a href={url} target="_blank">
+							点我打开二次认证页面
+						</a>
+					</p>
+					<img style={{ width: 135, height: 135, marginTop: 15 }} src={qrCodeUrl} alt="qr" />
 				</>
 			);
 			break;
