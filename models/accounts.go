@@ -227,7 +227,6 @@ func RefreshAccountBotInfo() error {
 			continue
 		}
 
-		o := orm.NewOrm()
 		online := 0
 		if botValue.Online {
 			online = 1
@@ -261,4 +260,41 @@ func AccountReupdatePassword(m *Accounts, password string) (account *Accounts, o
 	}
 
 	return account, false
+}
+
+// 系统启动时自动登陆机器人账号
+func AutoLoginAllBotAccount() {
+
+	o := orm.NewOrm()
+
+	var accounts []*Accounts
+	o.QueryTable(new(Accounts)).Filter("auto_login", 1).Filter("status", 0).All(&accounts)
+
+	for _, account := range accounts {
+
+		// 初始化 Bot
+		bot.InitBot(account.Account, account.Password)
+
+		// 初始化 Modules
+		bot.StartService()
+
+		// 使用协议
+		// 不同协议可能会有部分功能无法使用
+		// 在登陆前切换协议
+		bot.UseProtocol(bot.IPad)
+
+		// 登录
+		if resp, err := bot.Instance.Login(); err == nil && resp.Success {
+			// 刷新好友列表，群列表
+			bot.RefreshList()
+
+			// 将登陆成功的对象加入序列
+			bot.Instances[account.Account] = bot.Instance
+		}
+
+	}
+
+	// 刷新全部机器人账号信息
+	RefreshAccountBotInfo()
+
 }

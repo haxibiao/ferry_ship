@@ -74,4 +74,7 @@ func init() {
 	// 机器人加载搜索电影组件
 	bot.RegisterModule(helper.MovieInstance)
 
+	// 系统启动时自动登陆机器人账号
+	AutoLoginAllBotAccount()
+
 }
