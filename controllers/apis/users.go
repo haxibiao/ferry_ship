@@ -97,6 +97,7 @@ func (c *UsersController) ApiCreateUser() {
 	callBackResult(&c.Controller, 200, "", c.Data["json"])
 }
 
+// 禁用后台管理账号
 func (c *UsersController) ApiUpStatusUser() {
 	// 要求登陆助理函数
 	userAssistant(&c.Controller)
@@ -150,6 +151,7 @@ func (c *UsersController) ApiUpStatusUser() {
 	c.Finish()
 }
 
+// 修改管理员账号密码
 func (c *UsersController) ApiUpdateUser() {
 	// 要求登陆助理函数
 	userAssistant(&c.Controller)
@@ -166,16 +168,24 @@ func (c *UsersController) ApiUpdateUser() {
 	user, err := models.GetUserById(u_id)
 
 	if user == nil || err != nil {
-		callBackResult(&c.Controller, 200, "用户不存在", nil)
+		callBackResult(&c.Controller, 403, "用户不存在", nil)
 		c.Finish()
 		return
 	}
 
+	o := orm.NewOrm()
+
 	// TODO: Bin BY 这里应该还可以做判断用户名和密码是否合法
-	user.Password = helper.StringToMd5(u_password)
+	if o.QueryTable(&user).Update(orm.Params{
+		"password": helper.StringToMd5(u_password),
+	}); err != nil {
+		callBackResult(&c.Controller, 403, "出错啦，"+err.Error(), nil)
+		c.Finish()
+		return
+	}
 
 	if err != nil {
-		callBackResult(&c.Controller, 200, "出错啦，"+err.Error(), nil)
+		callBackResult(&c.Controller, 403, "出错啦，"+err.Error(), nil)
 		c.Finish()
 		return
 	}
