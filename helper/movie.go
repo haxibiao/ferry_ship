@@ -6,6 +6,7 @@
 package helper
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -28,6 +29,12 @@ var MovieInstance = &movie{}
 var logger = utils.GetModuleLogger("bin.moviereply")
 
 // var tem map[string]string
+
+// var BaseWebURL = "xiamaoshipin.com"
+// var BaseBotName = "瞎猫视频"
+
+var BaseWebURL = "xiaocaihong.tv"
+var BaseBotName = "小彩虹视频"
 
 type movie struct {
 }
@@ -125,15 +132,14 @@ func (mov *movie) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 func autoreply(in string) string {
 
 	if in == "" {
-		return "瞎猫视频（xiamaoshipin.com）AI 好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://xiamaoshipin.com/app"
+		return BaseBotName + "（" + BaseWebURL + "）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://" + BaseWebURL + "/app"
 	}
 
-	out, ok := SearchMovie(in)
+	out, ok := SearchMovie2(in)
 	if !ok {
 		return ""
 	}
 	return out
-
 }
 
 func SearchMovie(keywords string) (callback string, ok bool) {
@@ -165,9 +171,53 @@ func SearchMovie(keywords string) (callback string, ok bool) {
 		}
 
 		if quantity > 0 {
-			text = "瞎猫视频（xiamaoshipin.com）AI 帮您搜索到 " + strconv.Itoa(quantity) + " 条《" + keywords + "》相关内容：\n" + seekMovies
+			text = BaseBotName + "（" + BaseWebURL + "）帮您搜索到 " + strconv.Itoa(quantity) + " 条《" + keywords + "》相关内容：\n" + seekMovies
 		} else {
-			text = "瞎猫视频（xiamaoshipin.com）AI 很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？立即下载：https://xiamaoshipin.com/app"
+			text = BaseBotName + "（" + BaseWebURL + "）很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？立即下载：https://" + BaseWebURL + "/app"
+		}
+	}
+
+	// fmt.Println("【消息】" + text)
+	return text, true
+}
+
+func SearchMovie2(keywords string) (callback string, ok bool) {
+	seekApi := "https://xiaocaihong.tv/api/movie/qq/search/"
+	req := httplib.Post(seekApi)
+	req.Param("q", keywords)
+	req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+
+	str, err := req.String()
+	if err != nil {
+		return "", false
+		// t.Fatal(err)
+	}
+
+	text := ""
+	seekMovies := ""
+
+	var data_obj interface{}
+	json.Unmarshal([]byte(str), &data_obj)
+
+	if data_obj != nil {
+
+		movies := data_obj.([]interface{})
+		quantity := len(movies)
+
+		i := 1
+		for _, value := range movies {
+
+			var movieName = value.(map[string]interface{})["name"].(string)
+			var movieUrl = value.(map[string]interface{})["url"].(string)
+
+			seekMovies = seekMovies + "\n" + strconv.Itoa(i) + "，《" + movieName + "》，立即观看：" + movieUrl
+			i++
+		}
+
+		if quantity > 0 {
+			text = BaseBotName + "（" + BaseWebURL + "）帮您搜索到 " + strconv.Itoa(quantity) + " 条《" + keywords + "》相关内容：\n" + seekMovies
+		} else {
+			text = BaseBotName + "（" + BaseWebURL + "）很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？立即下载：https://" + BaseWebURL + "/app"
 		}
 	}
 
