@@ -8,8 +8,8 @@ package helper
 import (
 	"crypto/tls"
 	"encoding/json"
+	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/Mrs4s/MiraiGo/client"
@@ -66,7 +66,7 @@ func (mov *movie) PostInit() {
 func (mov *movie) Serve(b *bot.Bot) {
 	b.OnGroupMessage(func(c *client.QQClient, msg *message.GroupMessage) {
 
-		// fmt.Printf("message=%+v\n", msg.Elements)
+		// fmt.Printf("message=%+v\n", msg.Sender.Nickname)
 
 		if botObj := bot.Instances[c.Uin]; botObj == nil {
 			// 机器人已下线，直接结束回复流程
@@ -74,19 +74,47 @@ func (mov *movie) Serve(b *bot.Bot) {
 			return
 		}
 
+		groupInfo := c.FindGroup(msg.GroupCode)
+		if groupInfo == nil {
+			// QQ 群信息获取失败，结束流程
+			// fmt.Println("【收到消息】QQ 群信息获取失败，直接结束回复流程")
+			return
+		}
+		groupMemberInfo := groupInfo.FindMember(c.Uin)
+		botName := ""
+		if groupMemberInfo == nil {
+			// QQ 群我的数据获取失败，直接赋值昵称
+			botName = b.Nickname
+		} else {
+			botName = groupMemberInfo.DisplayName()
+		}
+
+		// fmt.Printf("群昵称=%+v\n", botName)
+
 		for _, elem := range msg.Elements {
 
 			// 判断是 @ 用户消息类型
 			if elem.Type() == message.At {
 
 				// 判断是否 @ 当前机器人并触发搜索关键词
-				mKeys := []string{"@" + b.Nickname + " 搜索", "@" + b.Nickname + " 搜索"}
+				mKeys := []string{"@" + botName + " 搜索 ", "@" + botName + " 搜索"}
 
 				for _, value := range mKeys {
-					if strings.Contains(msg.ToString(), value) {
+
+					// 正则匹配电影名称
+					flysnowRegexp := regexp.MustCompile(value + `(.+)$`)
+					params := flysnowRegexp.FindStringSubmatch(msg.ToString())
+					if len(params) <= 0 {
+						// 判断没有匹配到关键词，进入下一次循环
+						continue
+					}
+					movieKey := params[1] // 提取匹配到的关键词
+					// fmt.Printf("群电影名=%+v\n", params[1])
+
+					if movieKey != "" {
 
 						// 开始搜索电影
-						out := autoreply(strings.Replace(msg.ToString(), value, "", -1))
+						out := autoreply(movieKey)
 						if out == "" {
 							return
 						}
@@ -101,9 +129,9 @@ func (mov *movie) Serve(b *bot.Bot) {
 				}
 
 				// 未触发关键词，生成默认回复消息并发送
-				out := autoreply("")
-				m := message.NewSendingMessage().Append(message.NewText(out))
-				c.SendGroupMessage(msg.GroupCode, m)
+				// out := autoreply("")
+				// m := message.NewSendingMessage().Append(message.NewText(out))
+				// c.SendGroupMessage(msg.GroupCode, m)
 
 			}
 		}
