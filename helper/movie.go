@@ -94,10 +94,12 @@ func (mov *movie) Serve(b *bot.Bot) {
 		for _, elem := range msg.Elements {
 
 			// 判断是 @ 用户消息类型
-			if elem.Type() == message.At {
+			// if elem.Type() == message.At {
+			if elem.Type() != message.Voice {
 
 				// 判断是否 @ 当前机器人并触发搜索关键词
-				mKeys := []string{"@" + botName + " 搜索 ", "@" + botName + " 搜索"}
+				// mKeys := []string{"@" + botName + " 搜索 ", "@" + botName + " 搜索"}
+				mKeys := []string{"搜索 ", "搜索"}
 
 				for _, value := range mKeys {
 
