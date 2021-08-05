@@ -309,9 +309,12 @@ func getTemplateConfig() (configSuccess string, configEmpty string, configFail s
 			"fail":    BaseBotName + "（" + BaseWebURL + "）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://" + BaseWebURL + "/app", // 失败的消息模版
 		}
 	}
-	configSuccess, err = strconv.Unquote("\"" + config["success"].(string) + "\"")
-	configEmpty, err = strconv.Unquote("\"" + config["empty"].(string) + "\"")
-	configFail, err = strconv.Unquote("\"" + config["fail"].(string) + "\"")
+	// configSuccess, err = strconv.Unquote("\"" + config["success"].(string) + "\"")
+	// configEmpty, err = strconv.Unquote("\"" + config["empty"].(string) + "\"")
+	// configFail, err = strconv.Unquote("\"" + config["fail"].(string) + "\"")
+	configSuccess = config["success"].(string)
+	configEmpty = config["empty"].(string)
+	configFail = config["fail"].(string)
 	return
 }
 
