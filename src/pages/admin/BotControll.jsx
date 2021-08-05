@@ -688,7 +688,7 @@ export default function BotControll() {
 						disabled={botLogoutConfig?.callback?.error ? true : false}
 						loading={botLogoutConfig.netLoding}
 					>
-						立即登陆
+						退出登陆
 					</Button>
 				</Modal.Footer>
 			</Modal>
