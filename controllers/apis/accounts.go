@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"ferry_ship/bot"
-	"ferry_ship/helper"
 	"ferry_ship/models"
 	"fmt"
 	"io/ioutil"
@@ -371,7 +370,7 @@ func (c *AccountsController) ApiGetBotInfo() {
 		fmt.Println("输出: " + n)
 	}
 
-	helper.SearchMovie("黑猫")
+	// helper.SearchMovie("黑猫")
 
 	// u_account, _ := c.GetInt64("account")
 	// bot := helper.GetBotInfo(u_account)

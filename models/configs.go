@@ -11,7 +11,7 @@ import (
 type Configs struct {
 	Id      int
 	Name    string    `orm:"size(128); description(配置名称)"`
-	Data    string    `orm:"type(longtext); description(配置数据)"`
+	Data    string    `orm:"type(text); description(配置数据)"`
 	Created time.Time `orm:"auto_now_add; type(datetime)"`
 	Updated time.Time `orm:"auto_now; type(datetime)"`
 }
@@ -34,13 +34,16 @@ func AddConfigs(m *Configs) (c *Configs, err error) {
 func UpdateConfigs(m *Configs) (c *Configs, err error) {
 	o := orm.NewOrm()
 	var v Configs
+	cols := "Id"
 	if m.Name != "" {
 		v = Configs{Name: m.Name}
+		cols = "Name"
 	} else {
 		v = Configs{Id: m.Id}
+		cols = "Id"
 	}
 	// ascertain id exists in the database
-	if err = o.Read(&v, "Name"); err == nil {
+	if err = o.Read(&v, cols); err == nil {
 		var id int64
 		v.Data = m.Data
 		if id, err = o.Update(&v); err == nil {

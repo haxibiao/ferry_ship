@@ -7,6 +7,7 @@ package models
 
 import (
 	"ferry_ship/bot"
+	"ferry_ship/bot/plugin"
 	"ferry_ship/helper"
 	"fmt"
 	"sync"
@@ -72,7 +73,7 @@ func init() {
 	RefreshAccountBotInfo()
 
 	// 机器人加载搜索电影组件
-	bot.RegisterModule(helper.MovieInstance)
+	bot.RegisterModule(plugin.MovieInstance)
 
 	// 系统启动时自动登陆机器人账号
 	AutoLoginAllBotAccount()

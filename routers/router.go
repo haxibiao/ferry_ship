@@ -38,6 +38,13 @@ func init() {
 			web.NSRouter("/bot/ticket", &apis.AccountsController{}, "post:ApiBotVerifyTicket"),
 			web.NSRouter("/bot/repassword", &apis.AccountsController{}, "post:ApiUpdateBotPassword"),
 		),
+
+		// 系统配置相关 API
+		web.NSNamespace("/system",
+			// 获取用户信息
+			web.NSRouter("/message_template/save", &apis.SystemController{}, "post:ApiSaveMessageTemplate"),
+			web.NSRouter("/message_template/get", &apis.SystemController{}, "get:ApiGetMessageTemplate"),
+		),
 	)
 
 	web.AddNamespace(api)
