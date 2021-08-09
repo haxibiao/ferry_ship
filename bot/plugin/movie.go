@@ -295,6 +295,66 @@ func SearchMovie2(keywords string) (callback string, ok bool) {
 	return text, true
 }
 
+func SearchMovie3(keywords string) (callback string, ok bool) {
+	seekApi := "http://juhaokan.renzaichazai.cn/api/movie/search?name=" + keywords
+	req := httplib.Post(seekApi)
+	// req.Param("q", keywords)
+	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+
+	configSuccess, configEmpty, _, configErr := getTemplateConfig()
+	if configErr != nil {
+		configSuccess = BaseBotName + "（" + BaseWebURL + "）帮您搜索到 ${movie.total} 条《${movie.keywords}》相关内容，建议复制链接打开手机浏览器观看：\n\n${movie.list}"
+		configEmpty = BaseBotName + "（" + BaseWebURL + "）很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？立即下载：https://" + BaseWebURL + "/app"
+		// configFail = BaseBotName + "（" + BaseWebURL + "）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://" + BaseWebURL + "/app"
+	}
+
+	str, err := req.String()
+	if err != nil {
+		return "", false
+		// t.Fatal(err)
+	}
+
+	text := ""
+	seekMovies := ""
+
+	var data_obj interface{}
+	json.Unmarshal([]byte(str), &data_obj)
+
+	if data_obj != nil {
+
+		movies := data_obj.([]interface{})
+		quantity := len(movies)
+
+		i := 1
+		for _, value := range movies {
+
+			var movieName = value.(map[string]interface{})["name"].(string)
+			var movieUrl = value.(map[string]interface{})["url"].(string)
+
+			seekMovies = seekMovies + "\n" + strconv.Itoa(i) + "，《" + movieName + "》，立即观看：" + movieUrl
+			i++
+		}
+
+		if quantity > 0 {
+			// 搜索到电影了，使用成功的消息模版
+			text = configSuccess
+		} else {
+			// 没有搜索到电影，使用空数据的消息模版
+			text = configEmpty
+		}
+
+		// 将数据传递进去进行匹配
+		text = replaceTemplateCharacters(text, map[string]interface{}{
+			"total":    quantity,   // 搜索到的电影数量
+			"keywords": keywords,   // 搜索的关键词
+			"list":     seekMovies, // 电影列表
+		}, "movie")
+	}
+
+	// fmt.Println("【消息】" + text)
+	return text, true
+}
+
 /**
  * @description: 获取缓存的模版数据
  * @param {*}

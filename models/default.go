@@ -41,12 +41,12 @@ func addUser(name string, password string) {
 func initBotTemplateConfig() {
 	config, err := helper.GetConfigsDataByName("plugin_config_message_template")
 	if err != nil || config == nil {
-		config = map[string]interface{}{
+		configs := map[string]interface{}{
 			"success": "小彩虹视频 Beta（xiaocaihong.tv）帮您搜索到 ${movie.total} 条《${movie.keywords}》相关内容：\n\n${movie.list}",                                // 成功的消息模版
 			"empty":   "小彩虹视频（xiaocaihong.tv）很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？\n立即下载：https://xiaocaihong.tv/app",                                   // 空的消息模版
 			"fail":    "小彩虹视频（xiaocaihong.tv）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://xiaocaihong.tv/app", // 失败的消息模版
 		}
-		AddConfigByData("plugin_config_message_template", config)
+		AddConfigByData("plugin_config_message_template", configs)
 	}
 }
 
