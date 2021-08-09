@@ -7,6 +7,7 @@ package helper
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/beego/beego/v2/client/orm"
 )
@@ -32,6 +33,10 @@ func GetConfigsDataByName(name string) (data map[string]interface{}, error error
 	// 执行 SQL 语句
 	o := orm.NewOrm()
 	error = o.Raw(sql, name).QueryRow(&c)
+
+	if c.Id == 0 {
+		return nil, errors.New("config is nil")
+	}
 
 	dataStr := c.Data
 	var data_obj interface{}
