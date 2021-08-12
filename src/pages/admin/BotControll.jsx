@@ -153,6 +153,63 @@ export default function BotControll() {
 			});
 	};
 
+	// 删除账号
+	const [botDeleteConfig, setbotDeleteConfig] = useState({
+		id: 0, // id
+		account: 0, // 账号
+		showModal: false, // 显示弹窗
+		netLoding: false, // 标识请求中状态
+	});
+	const APIDeleteAccount = (id) => {
+		if (botDeleteConfig?.netLoding) {
+			return;
+		}
+		setbotDeleteConfig({
+			...botDeleteConfig,
+			netLoding: true,
+		});
+
+		const msgStrTitle = '删除';
+		const params = new URLSearchParams();
+		params.append('id', id);
+
+		axios
+			.post('/api/account/delete', params, {})
+			.then((res) => {
+				const { data } = res;
+				const { code } = data;
+
+				if (code < 1) {
+					Notification.error({
+						title: data?.msg || msgStrTitle + '失败，请稍后重试！',
+					});
+				} else {
+					const user = data?.data;
+
+					Notification.success({
+						title: `删除账号成功！`,
+					});
+
+					// 删除账号成功，关闭弹窗，刷新列表数据，清空编辑框数据
+					refetch();
+				}
+
+				setbotDeleteConfig({
+					showModal: false,
+					netLoding: false,
+				});
+			})
+			.catch((error) => {
+				Notification.error({
+					title: msgStrTitle + '失败，' + error || msgStrTitle + '失败，请稍后重试！',
+				});
+				setbotDeleteConfig({
+					...botDeleteConfig,
+					netLoding: false,
+				});
+			});
+	};
+
 	// 登陆账号
 	const [botLoginConfig, setbotLoginConfig] = useState({
 		id: 0, // id
@@ -501,6 +558,18 @@ export default function BotControll() {
 									e.stopPropagation();
 								}
 
+								// 删除机器人账号
+								function onDeleteBotAccount(e) {
+									setbotDeleteConfig({
+										...botLoginConfig,
+										id: rowData?.id,
+										account: rowData?.account,
+										showModal: true,
+									});
+									// 结束事件分发
+									e.stopPropagation();
+								}
+
 								function disableAction(e) {
 									// 结束事件分发
 									e.stopPropagation();
@@ -522,8 +591,8 @@ export default function BotControll() {
 												<a onClick={onBotLogin}> 立即登陆 </a> |
 											</>
 										)}
-										<a onClick={onBotRepassword}> 重设密码 </a> |<a onClick={onClick}> 删除账号 </a>{' '}
-										|
+										<a onClick={onBotRepassword}> 重设密码 </a> |
+										<a onClick={onDeleteBotAccount}> 删除账号 </a> |
 										<a onClick={disableAction}>
 											{rowData.auto_login == 1 ? ' 禁用自动登陆 ' : ' 启用自动登陆 '}
 										</a>{' '}
@@ -674,7 +743,7 @@ export default function BotControll() {
 				backdrop="static"
 			>
 				<Modal.Header>
-					<Modal.Title>是否要登陆账号？</Modal.Title>
+					<Modal.Title>退出登陆该账号？</Modal.Title>
 				</Modal.Header>
 				<Modal.Body>
 					<p>是否需要退出登陆机器人账号：{botLogoutConfig.account}</p>
@@ -689,6 +758,36 @@ export default function BotControll() {
 						loading={botLogoutConfig.netLoding}
 					>
 						退出登陆
+					</Button>
+				</Modal.Footer>
+			</Modal>
+
+			{/* 删除机器人账号弹窗 */}
+			<Modal
+				show={botDeleteConfig.showModal}
+				onHide={() => {
+					setbotDeleteConfig({
+						...botDeleteConfig,
+						showModal: false,
+					});
+				}}
+				backdrop="static"
+			>
+				<Modal.Header>
+					<Modal.Title>删除账号？</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<p>是否需要退出登陆机器人账号：{botDeleteConfig.account}</p>
+					<p>账号删除之后需要重新添加才能登陆使用。</p>
+				</Modal.Body>
+				<Modal.Footer>
+					<Button
+						onClick={() => APIDeleteAccount(botDeleteConfig?.id)}
+						style={{ color: '#FFF' }}
+						appearance="primary"
+						loading={botDeleteConfig.netLoding}
+					>
+						删除账号
 					</Button>
 				</Modal.Footer>
 			</Modal>

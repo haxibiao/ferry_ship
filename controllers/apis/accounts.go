@@ -69,6 +69,38 @@ func (c *AccountsController) ApiAddBotAccount() {
 	c.Finish()
 }
 
+/**
+ * @description: 删除一个机器人 QQ 账号
+ * @param {*}
+ * @return {*}
+ */
+func (c *AccountsController) ApiDeleteBotAccount() {
+	userAssistant(&c.Controller)
+
+	botID, _ := c.GetInt("id")
+	if botID == 0 {
+		callBackResult(&c.Controller, 403, "参数异常", nil)
+		c.Finish()
+		return
+	}
+
+	account_, existing := models.GetAccountsById(botID)
+	if account_ == nil && existing != nil {
+		callBackResult(&c.Controller, 200, "账号删除失败，账号不存在", nil)
+		c.Finish()
+		return
+	}
+
+	existing = models.DeleteAccounts(account_.Id)
+	if existing != nil {
+		callBackResult(&c.Controller, 200, "账号删除失败，出现异常", nil)
+		c.Finish()
+		return
+	}
+
+	callBackResult(&c.Controller, 200, "", models.TurnAccountsToMap(account_))
+}
+
 // 响应获取全部机器人账号列表
 func (c *AccountsController) ApiGetAllAccount() {
 	userAssistant(&c.Controller) // 登陆认证
