@@ -227,9 +227,9 @@ func RefreshAccountBotInfo() error {
 			continue
 		}
 
-		online := 0
+		online := false
 		if botValue.Online {
-			online = 1
+			online = true
 		}
 		o.QueryTable(new(Accounts)).Filter("account", accountKey).Update(orm.Params{
 			"name":   botValue.Nickname,

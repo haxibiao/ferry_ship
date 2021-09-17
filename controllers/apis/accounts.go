@@ -490,6 +490,7 @@ func (c *AccountsController) ApiLogoutBotAccount() {
 	if botObj == nil || !botObj.Online {
 		// 账号未登陆
 		callBackResult(&c.Controller, 200, "该账号未登陆", nil)
+		// fmt.Printf("账号=%+v\n", botObj.Nickname)
 		// 刷新机器人在线状态列表数据
 		models.RefreshAccountBotInfo()
 		c.Finish()
