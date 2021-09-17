@@ -5,8 +5,8 @@ go 1.15
 require github.com/beego/beego/v2 v2.0.1
 
 require (
-	github.com/Logiase/MiraiGo-Template v0.0.0-20210524064918-229c83f88d32
-	github.com/Mrs4s/MiraiGo v0.0.0-20210729112218-624a7e4101e7
+	github.com/Logiase/MiraiGo-Template v0.0.0-20210909051214-2b190772378a
+	github.com/Mrs4s/MiraiGo v0.0.0-20210916113136-0238b2382b82
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/prometheus/common v0.29.0 // indirect
@@ -23,3 +23,5 @@ require (
 	golang.org/x/tools v0.1.4 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
+
+replace github.com/willf/bitset v1.2.0 => github.com/bits-and-blooms/bitset v1.2.0
