@@ -8,6 +8,7 @@ package plugin
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strconv"
 	"sync"
@@ -15,6 +16,8 @@ import (
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/beego/beego/v2/client/httplib"
+
+	beego "github.com/beego/beego/v2/server/web"
 
 	"ferry_ship/bot"
 	"ferry_ship/bot/utils"
@@ -67,18 +70,18 @@ func (mov *movie) PostInit() {
 func (mov *movie) Serve(b *bot.Bot) {
 	b.OnGroupMessage(func(c *client.QQClient, msg *message.GroupMessage) {
 
-		// fmt.Printf("message=%+v\n", msg.Sender.Nickname)
+		fmt.Printf("message=%+v\n", msg.Sender.Nickname)
 
 		if botObj := bot.Instances[c.Uin]; botObj == nil {
 			// 机器人已下线，直接结束回复流程
-			// fmt.Println("【收到消息】机器人已下线，直接结束回复流程")
+			fmt.Println("【收到消息】机器人已下线，直接结束回复流程")
 			return
 		}
 
 		groupInfo := c.FindGroup(msg.GroupCode)
 		if groupInfo == nil {
 			// QQ 群信息获取失败，结束流程
-			// fmt.Println("【收到消息】QQ 群信息获取失败，直接结束回复流程")
+			fmt.Println("【收到消息】QQ 群信息获取失败，直接结束回复流程")
 			return
 		}
 		groupMemberInfo := groupInfo.FindMember(c.Uin)
@@ -112,7 +115,7 @@ func (mov *movie) Serve(b *bot.Bot) {
 						continue
 					}
 					movieKey := params[1] // 提取匹配到的关键词
-					// fmt.Printf("群电影名=%+v\n", params[1])
+					fmt.Printf("群电影名=%+v\n", params[1])
 
 					if movieKey != "" {
 
@@ -124,8 +127,9 @@ func (mov *movie) Serve(b *bot.Bot) {
 
 						// 生成回复消息并发送
 						m := message.NewSendingMessage().Append(message.NewText(out))
-						c.SendGroupMessage(msg.GroupCode, m)
-
+						msgt := c.SendGroupMessage(msg.GroupCode, m)
+						logger.Infof("回复消息: %d", msgt.Id)
+						// fmt.Printf("回复=%+v\n", msgt.Id)
 						// 匹配成功一次之后就跳出匹配
 						return
 					}
@@ -173,7 +177,32 @@ func autoreply(in string) string {
 		return configFail
 	}
 
-	out, ok := SearchMovie2(in)
+	APIID, apiid_err := beego.AppConfig.Int("apiid")
+	if apiid_err != nil {
+		APIID = 0
+	}
+
+	var out string
+	var ok bool
+	switch APIID {
+	case 1:
+		// xiamaoshipin.com
+		out, ok = SearchMovie(in)
+	case 2:
+		// xiaocaihong.tv
+		out, ok = SearchMovie2(in)
+	case 3:
+		// juhaokan.renzaichazai.cn
+		out, ok = SearchMovie3(in)
+	case 4:
+		// juhaokantv.com
+		out, ok = SearchMovie4(in)
+	default:
+		// 默认
+		out, ok = SearchMovie4(in)
+	}
+
+	// out, ok := SearchMovie4(in)
 	if !ok {
 		return ""
 	}

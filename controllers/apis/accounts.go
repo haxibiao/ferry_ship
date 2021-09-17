@@ -487,7 +487,8 @@ func (c *AccountsController) ApiLogoutBotAccount() {
 
 	botObj := bot.Instances[account.Account]
 
-	if botObj == nil || !botObj.Online {
+	// fmt.Printf("账号=%+v  昵称=%+v  状态=%+v\n", account.Account, botObj.Nickname)
+	if botObj == nil {
 		// 账号未登陆
 		callBackResult(&c.Controller, 200, "该账号未登陆", nil)
 		// fmt.Printf("账号=%+v\n", botObj.Nickname)
