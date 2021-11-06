@@ -463,6 +463,11 @@ func SearchMovie4(keywords string) (callback string, ok bool) {
 		// configFail = BaseBotName + "（" + BaseWebURL + "）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://" + BaseWebURL + "/app"
 	}
 
+	// 判断请求是否成功
+	if res, err := req.Response(); err != nil || res.StatusCode > 299 || res.StatusCode < 200 {
+		return "", false
+	}
+
 	str, err := req.String()
 	if err != nil {
 		return "", false
