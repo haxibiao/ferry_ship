@@ -6,13 +6,18 @@
 package plugin
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strconv"
 	"sync"
 
+	"github.com/Mrs4s/MiraiGo/binary"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/beego/beego/v2/client/httplib"
@@ -70,7 +75,59 @@ func (mov *movie) PostInit() {
 func (mov *movie) Serve(b *bot.Bot) {
 	b.OnGroupMessage(func(c *client.QQClient, msg *message.GroupMessage) {
 
-		fmt.Printf("message=%+v\n", msg.Sender.Nickname)
+		msgEles := message.ToSrcProtoElems(msg.Elements)
+		for i := 0; i < len(msgEles); i++ {
+			var msgItem = msgEles[i].GetLightApp()
+			if msgItem != nil {
+				var content []byte
+				if msgItem.Data[0] == 0 {
+					content = msgItem.Data[1:]
+				}
+				if msgItem.Data[0] == 1 {
+					content = binary.ZlibUncompress(msgItem.Data[1:])
+				}
+				if len(content) > 0 && len(content) < 1024*1024*1024 { // 解析出错 or 非法内容
+					// TODO: 解析具体的APP
+					fmt.Printf("message=%+v\n", string(content))
+
+					var data_obj interface{}
+					json.Unmarshal(content, &data_obj)
+					if data_obj != nil {
+						data := data_obj.(map[string]interface{})
+
+						imgUrlMetaObj := data["meta"].(map[string]interface{})
+
+						if imgUrlMetaObj != nil {
+							imgUrlNewsObj := imgUrlMetaObj["news"].(map[string]interface{})
+
+							if imgUrlNewsObj != nil {
+								infoTitleStr := imgUrlNewsObj["title"].(string)
+								imgUrlStr := imgUrlNewsObj["preview"].(string)
+								playUrlStr := imgUrlNewsObj["jumpUrl"].(string)
+
+								if imgFile, err := downloadLoadImage(imgUrlStr); err == nil {
+									if imgObj, err := c.UploadGroupImage(msg.GroupCode, imgFile); err == nil {
+
+										m := message.NewSendingMessage().Append(message.NewText(data["prompt"].(string)))
+										m.Append(imgObj)
+										m.Append(message.NewText(fmt.Sprintf("视频名称: %s\n视频地址: %s", infoTitleStr, playUrlStr)))
+
+										c.SendGroupMessage(msg.GroupCode, m)
+									} else {
+
+										fmt.Printf("\nerr=%+v\n", err)
+									}
+								}
+
+							}
+						}
+
+					}
+
+					return
+				}
+			}
+		}
 
 		if botObj := bot.Instances[c.Uin]; botObj == nil {
 			// 机器人已下线，直接结束回复流程
@@ -157,6 +214,68 @@ func (mov *movie) Serve(b *bot.Bot) {
 	// })
 }
 
+// TODO: 解析影视分享卡片
+func (mov *movie) ServeCard(b *bot.Bot) {
+	b.OnGroupMessage(func(c *client.QQClient, msg *message.GroupMessage) {
+
+		msgEles := message.ToSrcProtoElems(msg.Elements)
+		for i := 0; i < len(msgEles); i++ {
+			var msgItem = msgEles[i].GetLightApp()
+			if msgItem != nil {
+				var content []byte
+				if msgItem.Data[0] == 0 {
+					content = msgItem.Data[1:]
+				}
+				if msgItem.Data[0] == 1 {
+					content = binary.ZlibUncompress(msgItem.Data[1:])
+				}
+				if len(content) > 0 && len(content) < 1024*1024*1024 { // 解析出错 or 非法内容
+					// TODO: 解析具体的APP
+					fmt.Printf("message=%+v\n", string(content))
+
+					var data_obj interface{}
+					json.Unmarshal(content, &data_obj)
+					if data_obj != nil {
+						data := data_obj.(map[string]interface{})
+
+						imgUrlMetaObj := data["meta"].(map[string]interface{})
+
+						if imgUrlMetaObj != nil {
+							imgUrlNewsObj := imgUrlMetaObj["news"].(map[string]interface{})
+
+							if imgUrlNewsObj != nil {
+								infoTitleStr := imgUrlNewsObj["title"].(string)
+								imgUrlStr := imgUrlNewsObj["preview"].(string)
+								playUrlStr := imgUrlNewsObj["jumpUrl"].(string)
+
+								if imgFile, err := downloadLoadImage(imgUrlStr); err == nil {
+									if imgObj, err := c.UploadGroupImage(msg.GroupCode, imgFile); err == nil {
+
+										m := message.NewSendingMessage().Append(message.NewText(data["prompt"].(string)))
+										m.Append(imgObj)
+										m.Append(message.NewText(fmt.Sprintf("视频名称: %s\n视频地址: %s", infoTitleStr, playUrlStr)))
+
+										c.SendGroupMessage(msg.GroupCode, m)
+									} else {
+
+										fmt.Printf("\nerr=%+v\n", err)
+									}
+								}
+
+							}
+						}
+
+					}
+
+					return
+				}
+			}
+		}
+
+	})
+
+}
+
 func (mov *movie) Start(bot *bot.Bot) {
 }
 
@@ -204,7 +323,7 @@ func autoreply(in string) string {
 
 	// out, ok := SearchMovie4(in)
 	if !ok {
-		return ""
+		return "搜索失败，服务器异常"
 	}
 	return out
 }
@@ -522,4 +641,15 @@ func replaceTemplateCharacters(template string, data map[string]interface{}, fla
 	}
 
 	return template
+}
+
+func downloadLoadImage(url string) (img io.ReadSeeker, err error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	file, err := ioutil.ReadAll(resp.Body)
+	return bytes.NewReader(file), err
 }
