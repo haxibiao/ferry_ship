@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/Mrs4s/MiraiGo/binary"
 	"github.com/Mrs4s/MiraiGo/client"
@@ -74,60 +75,6 @@ func (mov *movie) PostInit() {
 
 func (mov *movie) Serve(b *bot.Bot) {
 	b.OnGroupMessage(func(c *client.QQClient, msg *message.GroupMessage) {
-
-		msgEles := message.ToSrcProtoElems(msg.Elements)
-		for i := 0; i < len(msgEles); i++ {
-			var msgItem = msgEles[i].GetLightApp()
-			if msgItem != nil {
-				var content []byte
-				if msgItem.Data[0] == 0 {
-					content = msgItem.Data[1:]
-				}
-				if msgItem.Data[0] == 1 {
-					content = binary.ZlibUncompress(msgItem.Data[1:])
-				}
-				if len(content) > 0 && len(content) < 1024*1024*1024 { // 解析出错 or 非法内容
-					// TODO: 解析具体的APP
-					fmt.Printf("message=%+v\n", string(content))
-
-					var data_obj interface{}
-					json.Unmarshal(content, &data_obj)
-					if data_obj != nil {
-						data := data_obj.(map[string]interface{})
-
-						imgUrlMetaObj := data["meta"].(map[string]interface{})
-
-						if imgUrlMetaObj != nil {
-							imgUrlNewsObj := imgUrlMetaObj["news"].(map[string]interface{})
-
-							if imgUrlNewsObj != nil {
-								infoTitleStr := imgUrlNewsObj["title"].(string)
-								imgUrlStr := imgUrlNewsObj["preview"].(string)
-								playUrlStr := imgUrlNewsObj["jumpUrl"].(string)
-
-								if imgFile, err := downloadLoadImage(imgUrlStr); err == nil {
-									if imgObj, err := c.UploadGroupImage(msg.GroupCode, imgFile); err == nil {
-
-										m := message.NewSendingMessage().Append(message.NewText(data["prompt"].(string)))
-										m.Append(imgObj)
-										m.Append(message.NewText(fmt.Sprintf("视频名称: %s\n视频地址: %s", infoTitleStr, playUrlStr)))
-
-										c.SendGroupMessage(msg.GroupCode, m)
-									} else {
-
-										fmt.Printf("\nerr=%+v\n", err)
-									}
-								}
-
-							}
-						}
-
-					}
-
-					return
-				}
-			}
-		}
 
 		if botObj := bot.Instances[c.Uin]; botObj == nil {
 			// 机器人已下线，直接结束回复流程
@@ -505,7 +452,7 @@ func SearchMovie3(keywords string) (callback string, ok bool) {
 
 func SearchMovie4(keywords string) (callback string, ok bool) {
 	seekApi := "https://juhaokantv.com/api/movie/search?name=" + keywords
-	req := httplib.Post(seekApi)
+	req := httplib.Post(seekApi).SetTimeout(100*time.Second, 30*time.Second)
 	// req.Param("q", keywords)
 	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
@@ -526,7 +473,9 @@ func SearchMovie4(keywords string) (callback string, ok bool) {
 	seekMovies := ""
 
 	var data_obj interface{}
-	json.Unmarshal([]byte(str), &data_obj)
+	if err = json.Unmarshal([]byte(str), &data_obj); err != nil {
+		return "", false
+	}
 
 	if data_obj != nil {
 
