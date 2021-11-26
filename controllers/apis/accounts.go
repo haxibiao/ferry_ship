@@ -108,6 +108,9 @@ func (c *AccountsController) ApiGetAllAccount() {
 	u_count, _ := c.GetInt("count", 10)
 	u_page, _ := c.GetInt("page", 0)
 
+	// 刷新机器人在线状态列表数据
+	models.RefreshAccountBotInfo()
+
 	accounts, err := models.AllAccounts(u_count, u_page)
 
 	if err != nil {
