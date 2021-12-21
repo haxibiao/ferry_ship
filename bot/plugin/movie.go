@@ -120,11 +120,15 @@ func (mov *movie) Serve(b *bot.Bot) {
 					}
 					movieKey := params[1] // 提取匹配到的关键词
 					fmt.Printf("群电影名=%+v\n", params[1])
+					logger.Infof("群电影名: %v", params[1])
 
 					if movieKey != "" {
 
 						// 开始搜索电影
-						out := autoreply(movieKey)
+						// out := autoreply(movieKey)
+
+						// TODO: 为了满足业务需求，增加一个聚合搜索接口需要传 QQ 账号给后端
+						out := autoreply(movieKey, strconv.FormatInt(c.Uin, 10))
 						if out == "" {
 							return
 						}
@@ -220,7 +224,6 @@ func (mov *movie) ServeCard(b *bot.Bot) {
 		}
 
 	})
-
 }
 
 func (mov *movie) Start(bot *bot.Bot) {
@@ -230,7 +233,7 @@ func (mov *movie) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
-func autoreply(in string) string {
+func autoreply(in string, qq string) string {
 
 	_, _, configFail, configErr := getTemplateConfig()
 	if configErr != nil {
@@ -265,7 +268,7 @@ func autoreply(in string) string {
 		out, ok = SearchMovie4(in)
 	case 5:
 		// mangguoshipin.info
-		out, ok = SearchMovie5(in)
+		out, ok = SearchMovie5All(in, qq)
 	default:
 		// 默认
 		out, ok = SearchMovie4(in)
@@ -522,6 +525,74 @@ func SearchMovie4(keywords string) (callback string, ok bool) {
 
 func SearchMovie5(keywords string) (callback string, ok bool) {
 	seekApi := "https://mangguoshipin.info/api/movie/search?name=" + keywords
+	req := httplib.Post(seekApi).SetTimeout(100*time.Second, 30*time.Second)
+	// req.Param("q", keywords)
+	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+
+	configSuccess, configEmpty, _, configErr := getTemplateConfig()
+	if configErr != nil {
+		configSuccess = BaseBotName + "（" + BaseWebURL + "）帮您搜索到 ${movie.total} 条《${movie.keywords}》相关内容，建议复制链接打开手机浏览器观看：\n\n${movie.list}"
+		configEmpty = BaseBotName + "（" + BaseWebURL + "）很遗憾暂时没有搜索到相关内容，资源马上就上线下载 APP 看看？立即下载：https://" + BaseWebURL + "/app"
+		// configFail = BaseBotName + "（" + BaseWebURL + "）好像不知道到您想要搜索的关键词，试试热门搜索：\n1，流浪地球\n2，你的名字\n3，我和我的祖国永远在一起\n\n下载APP高清资源无限免费看：https://" + BaseWebURL + "/app"
+	}
+
+	// 判断请求是否成功
+	if res, err := req.Response(); err != nil || res.StatusCode > 299 || res.StatusCode < 200 {
+		return "", false
+	}
+
+	str, err := req.String()
+	if err != nil {
+		return "", false
+		// t.Fatal(err)
+	}
+
+	text := ""
+	seekMovies := ""
+
+	var data_obj interface{}
+	if err = json.Unmarshal([]byte(str), &data_obj); err != nil {
+		return "", false
+	}
+
+	if data_obj != nil {
+
+		movies := data_obj.([]interface{})
+		quantity := len(movies)
+
+		i := 1
+		for _, value := range movies {
+
+			var movieName = value.(map[string]interface{})["name"].(string)
+			var movieUrl = value.(map[string]interface{})["url"].(string)
+
+			seekMovies = seekMovies + "\n" + strconv.Itoa(i) + "，《" + movieName + "》，立即观看：" + movieUrl
+			i++
+		}
+
+		if quantity > 0 {
+			// 搜索到电影了，使用成功的消息模版
+			text = configSuccess
+		} else {
+			// 没有搜索到电影，使用空数据的消息模版
+			text = configEmpty
+		}
+
+		// 将数据传递进去进行匹配
+		text = replaceTemplateCharacters(text, map[string]interface{}{
+			"total":    quantity,   // 搜索到的电影数量
+			"keywords": keywords,   // 搜索的关键词
+			"list":     seekMovies, // 电影列表
+		}, "movie")
+	}
+
+	// fmt.Println("【消息】" + text)
+	return text, true
+}
+
+// TODO: 为了满足业务需求，增加一个聚合搜索接口，会传 QQ 账号给后端，请确保后端安全避免泄漏数据
+func SearchMovie5All(keywords string, qq string) (callback string, ok bool) {
+	seekApi := "http://mangguoshipin.neihancloud.com/api/movie/search?qq=" + qq + "&name=" + keywords
 	req := httplib.Post(seekApi).SetTimeout(100*time.Second, 30*time.Second)
 	// req.Param("q", keywords)
 	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})

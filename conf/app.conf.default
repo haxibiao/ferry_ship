@@ -8,3 +8,6 @@ dbdriver = mysql
 dbusername = root
 dbpassword = mysqlpassword
 dbdatabase = test_ferry_ship
+
+# 2:小彩虹  4:剧好看  5:mangguoshipin
+apiid = 5
