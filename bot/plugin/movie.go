@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"sync"
@@ -457,7 +458,7 @@ func SearchMovie3(keywords string) (callback string, ok bool) {
 }
 
 func SearchMovie4(keywords string) (callback string, ok bool) {
-	seekApi := "https://juhaokantv.com/api/movie/search?name=" + keywords
+	seekApi := "https://juhaokantv.com/api/movie/search?name=" + url.QueryEscape(keywords)
 	req := httplib.Post(seekApi).SetTimeout(100*time.Second, 30*time.Second)
 	// req.Param("q", keywords)
 	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
@@ -592,7 +593,7 @@ func SearchMovie5(keywords string) (callback string, ok bool) {
 
 // TODO: 为了满足业务需求，增加一个聚合搜索接口，会传 QQ 账号给后端，请确保后端安全避免泄漏数据
 func SearchMovie5All(keywords string, qq string) (callback string, ok bool) {
-	seekApi := "http://mangguoshipin.neihancloud.com/api/movie/search?qq=" + qq + "&name=" + keywords
+	seekApi := "http://mangguoshipin.neihancloud.com/api/movie/search?qq=" + qq + "&name=" + url.QueryEscape(keywords)
 	req := httplib.Post(seekApi).SetTimeout(100*time.Second, 30*time.Second)
 	// req.Param("q", keywords)
 	// req.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
